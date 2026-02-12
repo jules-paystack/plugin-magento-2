@@ -22,17 +22,14 @@
 namespace Pstk\Paystack\Model;
 
 use Exception;
-use Magento\Payment\Helper\Data as PaymentHelper;
-use Pstk\Paystack\Model\Payment\Paystack as PaystackModel;
-use Yabacon\Paystack as PaystackLib;
+use Pstk\Paystack\Gateway\PaystackApiClient;
+use Psr\Log\LoggerInterface;
 
 class PaymentManagement implements \Pstk\Paystack\Api\PaymentManagementInterface
 {
 
-    protected $paystackPaymentInstance;
+    protected $paystackClient;
 
-    protected $paystackLib;
-    
     protected $orderInterface;
     protected $checkoutSession;
 
@@ -41,25 +38,23 @@ class PaymentManagement implements \Pstk\Paystack\Api\PaymentManagementInterface
      */
     private $eventManager;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
-        PaymentHelper $paymentHelper,
+        PaystackApiClient $paystackClient,
         \Magento\Framework\Event\Manager $eventManager,
         \Magento\Sales\Api\Data\OrderInterface $orderInterface,
-        \Magento\Checkout\Model\Session $checkoutSession
-            
+        \Magento\Checkout\Model\Session $checkoutSession,
+        LoggerInterface $logger
     ) {
+        $this->paystackClient = $paystackClient;
         $this->eventManager = $eventManager;
-        $this->paystackPaymentInstance = $paymentHelper->getMethodInstance(PaystackModel::CODE);
-        
         $this->orderInterface = $orderInterface;
         $this->checkoutSession = $checkoutSession;
-
-        $secretKey = $this->paystackPaymentInstance->getConfigData('live_secret_key');
-        if ($this->paystackPaymentInstance->getConfigData('test_mode')) {
-            $secretKey = $this->paystackPaymentInstance->getConfigData('test_secret_key');
-        }
-
-        $this->paystackLib = new PaystackLib($secretKey);
+        $this->logger = $logger;
     }
 
     /**
@@ -74,18 +69,31 @@ class PaymentManagement implements \Pstk\Paystack\Api\PaymentManagementInterface
         $reference = $ref[0];
         $quoteId = $ref[1];
         
+        $this->logger->info('Paystack: verifyPayment called', ['reference' => $reference, 'quoteId' => $quoteId]);
+
         try {
-            $transaction_details = $this->paystackLib->transaction->verify([
-                'reference' => $reference
+            $transaction_details = $this->paystackClient->verifyTransaction($reference);
+            $this->logger->info('Paystack: transaction verified via API', [
+                'tx_status' => $transaction_details->data->status ?? 'unknown',
+                'tx_quoteId' => $transaction_details->data->metadata->quoteId ?? 'missing',
             ]);
-            
+
             $order = $this->getOrder();
-            if ($order && $order->getQuoteId() === $quoteId && $transaction_details->data->metadata->quoteId === $quoteId) {
-                
+            $this->logger->info('Paystack: getOrder result', [
+                'order_found' => $order ? 'yes' : 'no',
+                'order_quoteId' => $order ? $order->getQuoteId() : 'N/A',
+                'url_quoteId' => $quoteId,
+                'tx_meta_quoteId' => $transaction_details->data->metadata->quoteId ?? 'missing',
+            ]);
+
+            if ($order && (string)$order->getQuoteId() === (string)$quoteId && (string)$transaction_details->data->metadata->quoteId === (string)$quoteId) {
+
                 // dispatch the `paystack_payment_verify_after` event to update the order status
                 $this->eventManager->dispatch('paystack_payment_verify_after', [
                     "paystack_order" => $order,
                 ]);
+
+                $this->logger->info('Paystack: verification successful, event dispatched');
 
                 // Return consistent response format
                 return json_encode([
@@ -94,7 +102,9 @@ class PaymentManagement implements \Pstk\Paystack\Api\PaymentManagementInterface
                     'data' => $transaction_details->data
                 ]);
             }
+            $this->logger->warning('Paystack: quoteId mismatch — order not updated');
         } catch (Exception $e) {
+            $this->logger->error('Paystack: verifyPayment exception', ['error' => $e->getMessage()]);
             return json_encode([
                 'status' => false,
                 'message' => $e->getMessage()

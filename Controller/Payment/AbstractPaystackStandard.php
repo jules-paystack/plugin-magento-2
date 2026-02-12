@@ -23,18 +23,19 @@
 namespace Pstk\Paystack\Controller\Payment;
 
 use Magento\Payment\Helper\Data as PaymentHelper;
+use Pstk\Paystack\Gateway\PaystackApiClient;
 
 
 abstract class AbstractPaystackStandard extends \Magento\Framework\App\Action\Action {
 
     protected $resultPageFactory;
-    
+
     /**
      *
-     * @var \Magento\Sales\Api\OrderRepositoryInterface 
+     * @var \Magento\Sales\Api\OrderRepositoryInterface
      */
     protected $orderRepository;
-    
+
     /**
      *
      * @var \Magento\Sales\Api\Data\OrderInterface
@@ -43,33 +44,33 @@ abstract class AbstractPaystackStandard extends \Magento\Framework\App\Action\Ac
     protected $checkoutSession;
     protected $method;
     protected $messageManager;
-    
+
     /**
      *
-     * @var \Pstk\Paystack\Model\Ui\ConfigProvider 
+     * @var \Pstk\Paystack\Model\Ui\ConfigProvider
      */
     protected $configProvider;
-    
+
     /**
      *
-     * @var \Yabacon\Paystack 
+     * @var PaystackApiClient
      */
-    protected $paystack;
-    
+    protected $paystackClient;
+
     /**
      * @var \Magento\Framework\Event\Manager
      */
     protected $eventManager;
-    
+
     /**
      *
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
-    
+
     /**
      *
-     * @var \Magento\Framework\App\Request\Http 
+     * @var \Magento\Framework\App\Request\Http
      */
     protected $request;
 
@@ -90,7 +91,8 @@ abstract class AbstractPaystackStandard extends \Magento\Framework\App\Action\Ac
             \Pstk\Paystack\Model\Ui\ConfigProvider $configProvider,
             \Magento\Framework\Event\Manager $eventManager,
             \Magento\Framework\App\Request\Http $request,
-            \Psr\Log\LoggerInterface $logger
+            \Psr\Log\LoggerInterface $logger,
+            PaystackApiClient $paystackClient
     ) {
         $this->resultPageFactory = $resultPageFactory;
         $this->orderRepository = $orderRepository;
@@ -102,19 +104,9 @@ abstract class AbstractPaystackStandard extends \Magento\Framework\App\Action\Ac
         $this->eventManager = $eventManager;
         $this->request = $request;
         $this->logger = $logger;
-        
-        $this->paystack = $this->initPaystackPHP();
-        
-        
+        $this->paystackClient = $paystackClient;
+
         parent::__construct($context);
-    }
-    
-    protected function initPaystackPHP() {
-        $secretKey = $this->method->getConfigData('live_secret_key');
-        if ($this->method->getConfigData('test_mode')) {
-            $secretKey = $this->method->getConfigData('test_secret_key');
-        }
-        return new \Yabacon\Paystack($secretKey);
     }
     
     protected function redirectToFinal($successFul = true, $message="") {

@@ -1,10 +1,8 @@
 {
     "name": "pstk/paystack-magento2-module",
     "description": "Paystack Magento2 Module using \\Magento\\Payment\\Model\\Method\\AbstractMethod",
-    "version": "2.5.0",
-    "require": {
-        "yabacon/paystack-php": "2.*"
-    },
+    "version": "3.0.0",
+    "require": {},
     "type": "magento2-module",
     "license": [
         "MIT"

@@ -12,6 +12,7 @@ class ConfigProvider implements ConfigProviderInterface
 {
 
     protected $method;
+    protected $store;
 
     public function __construct(PaymentHelper $paymentHelper, Store $store)
     {
