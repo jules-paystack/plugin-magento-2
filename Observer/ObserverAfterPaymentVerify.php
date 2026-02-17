@@ -31,8 +31,12 @@ class ObserverAfterPaymentVerify implements ObserverInterface
                     ->setCanSendNewEmailFlag(true)
                     ->setCustomerNoteNotify(true);
             $order->save();
-            
-            $this->orderSender->send($order, true);
+
+            try {
+                $this->orderSender->send($order, true);
+            } catch (\Exception $e) {
+                // Email sending failure should not affect order status
+            }
         }
     }
 }

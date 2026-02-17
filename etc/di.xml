@@ -3,5 +3,14 @@
     
     <!-- API -->
     <preference for="Pstk\Paystack\Api\PaymentManagementInterface" type="Pstk\Paystack\Model\PaymentManagement"/>
-    
+
+    <!-- CSP: register Paystack domains via PHP collector (backward-compatible across Magento versions) -->
+    <type name="Magento\Csp\Model\CompositePolicyCollector">
+        <arguments>
+            <argument name="collectors" xsi:type="array">
+                <item name="pstk-paystack-csp" xsi:type="object" sortOrder="10">Pstk\Paystack\Model\CspPolicyCollector</item>
+            </argument>
+        </arguments>
+    </type>
+
 </config>

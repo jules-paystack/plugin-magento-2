@@ -13,4 +13,6 @@ composer.phar
 \#*
 /nbproject/
 
+# Environment
 .env
+dev/.env

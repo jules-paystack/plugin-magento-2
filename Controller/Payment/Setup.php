@@ -37,7 +37,7 @@ class Setup extends AbstractPaystackStandard {
 
             try {
                 return $this->processAuthorization($order);
-            } catch (\Yabacon\Paystack\Exception\ApiException $e) {
+            } catch (\Pstk\Paystack\Gateway\Exception\ApiException $e) {
                 $message = $e->getMessage();
                 $order->addStatusToHistory($order->getStatus(), $message);
                 $this->orderRepository->save($order);
@@ -48,7 +48,7 @@ class Setup extends AbstractPaystackStandard {
     }
 
     protected function processAuthorization(\Magento\Sales\Model\Order $order) {
-        $tranx = $this->paystack->transaction->initialize([
+        $tranx = $this->paystackClient->initializeTransaction([
             'first_name' => $order->getCustomerFirstname(),
             'last_name' => $order->getCustomerLastname(),
             'amount' => $order->getGrandTotal() * 100, // in kobo

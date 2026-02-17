@@ -39,9 +39,7 @@ class Callback extends AbstractPaystackStandard {
         }
         
         try {
-            $transactionDetails = $this->paystack->transaction->verify([
-                'reference' => $reference
-            ]);
+            $transactionDetails = $this->paystackClient->verifyTransaction($reference);
             
             $reference = explode('_', $transactionDetails->data->reference, 2);
             $reference = ($reference[0])?: 0;
@@ -60,7 +58,7 @@ class Callback extends AbstractPaystackStandard {
 
             $message = "Invalid reference or order number";
             
-        } catch (\Yabacon\Paystack\Exception\ApiException $e) {
+        } catch (\Pstk\Paystack\Gateway\Exception\ApiException $e) {
             $message = $e->getMessage();
             
         } catch (Exception $e) {
