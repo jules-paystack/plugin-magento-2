@@ -10,4 +10,13 @@
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="csrf_validator_skip" type="Pstk\Paystack\Plugin\CsrfValidatorSkip" />
     </type>
+
+    <!-- CSP: register Paystack domains via PHP collector (frontend only - Paystack is not used in admin) -->
+    <type name="Magento\Csp\Model\CompositePolicyCollector">
+        <arguments>
+            <argument name="collectors" xsi:type="array">
+                <item name="pstk-paystack-csp" xsi:type="object">Pstk\Paystack\Model\CspPolicyCollector</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

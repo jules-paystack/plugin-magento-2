@@ -15,11 +15,12 @@ class ObserverBeforeSalesOrderPlace implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        //Observer execution code...
         /** @var \Magento\Sales\Model\Order $order **/
         $order = $observer->getEvent()->getOrder();
-        
-        if ($order) {
+
+        if ($order && $order->getPayment()
+            && $order->getPayment()->getMethod() === \Pstk\Paystack\Model\Payment\Paystack::CODE
+        ) {
             $order->setCanSendNewEmailFlag(false)
                     ->setCustomerNoteNotify(false);
         }

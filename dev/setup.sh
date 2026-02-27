@@ -70,6 +70,7 @@ mage config:set payment/pstk_paystack/integration_type inline
 
 echo ""
 echo "==> Setting store currency to NGN..."
+mage config:set currency/options/allow NGN,USD,ZAR
 mage config:set currency/options/base NGN
 mage config:set currency/options/default NGN
 mage config:set currency/options/allow NGN
